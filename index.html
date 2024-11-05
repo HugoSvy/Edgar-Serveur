@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pot Connecté</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Pot Connecté</h1>
+
+    <div class="sensor" id="temperature">Température : <span>0</span> °C</div>
+    <div class="sensor" id="light">Lumière : <span>0</span> Lux</div>
+    <div class="sensor" id="brightness">Luminosité : <span>0</span> %</div>
+    <div class="sensor" id="waterLevel">Niveau d'eau : <span>100</span> %</div>
+
+    <div id="notification" class="notification" style="display: none;">
+      Le niveau d'eau est bas !
+    </div>
+
+    <!-- Bouton de caméra en commentaire pour l'intégration future -->
+    <!-- <button onclick="takePhoto()">Prendre une photo</button> -->
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
