@@ -85,6 +85,7 @@ app.get('/etatGlobal', function (req, res) { //température, humidité, luminosi
 })
 
 app.get('/recherche', function (req, res) { //https://allowed-holy-magpie.ngrok-free.app/etatGlobal?nom=test
+  //http://localhost:8000/recherche?nom=test
   // Chercher des documents
   // Ici, pour l'exemple, on va chercher tous les articles dont le champ "nomDeLArticle" est égal à "Banane de Guadeloupe"
   // La méthode .find() est l'équivalent du requête SQL
@@ -93,10 +94,35 @@ app.get('/recherche', function (req, res) { //https://allowed-holy-magpie.ngrok-
       console.log('Une erreur MongoDB s\'est produite...')
       console.log(err)
     } else {
-      res.send("liste états plante test :" + resultats)
+      console.log('Résultats de la recherche :')
+      console.log(resultats)
+      console.log(resultats[0].temperature)
+      res.send("liste états plante test :" + resultats + " température : " + resultats[0].temperature)
+      
     }
   })
 })
+
+app.get('/last_recherche', function (req, res) {
+  console.log("Requête reçue sur /last_recherche avec paramètres : ", req.query); // Affiche les paramètres de la requête
+
+  histo_etats.find({ 'nom_plante': req.query.nom })
+    .sort({ date: -1 })
+    .limit(1)
+    .exec(function (err, resultats) {
+      if (err) {
+        console.log("Une erreur MongoDB s'est produite...");
+        console.log(err);
+        res.status(500).send("Erreur du serveur");
+      } else if (resultats.length === 0) {
+        console.log("Aucun document trouvé pour /last_recherche");
+        res.status(404).send("Aucun document trouvé");
+      } else {
+        console.log("Résultat le plus récent de la recherche : ", resultats[0]);
+        res.json(resultats[0]);
+      }
+    });
+});
 
 
 
