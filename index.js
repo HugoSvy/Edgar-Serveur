@@ -1,31 +1,26 @@
 // Lancement du serveur Express.js
 const express = require('express')
+const cors = require('cors')
 const app = express()
 
+// Activer CORS pour toutes les routes
+app.use(cors())
+
 //-----------------------------------INIT BDD-----------------------------------
-// En premier lieu, on charge la librairie "mongoose" qui va nous faciliter la communication avec la base de données MongoDB
 var mongoose = require('mongoose')
 
-// Ensuite, on ouvre une connexion à notre base de données MongoDB
-// Ici, la base de données est sur votre poste en local, pour y accéder, on renseigne donc l'adresse IP locale 127.0.0.1
-// On dit que l'on souhaite utiliser la base de données "db_pot", on peut la nommer comme on le souhaite
-// Inutile de la créer à l'avance, c'est MongoDB qui va la créer à la volée quand nous allons l'utiliser
+// Connexion à MongoDB
 mongoose.connect('mongodb://127.0.0.1/db_pot')
-
-// 2 lignes de configurations, vous devez les ajouter dans votre code mais nous n'allons pas essayer de comprendre pourquoi pour le moment
-// La seconde ligne sert à afficher un message d'erreur dans la console si une erreur MongoDB survient
 mongoose.Promise = global.Promise
 mongoose.connection.on('error', console.error.bind(console, 'Une erreur de connexion MongoDB est survenue :'))
 
-// Ensuite, on défini une collection
-// Ici, on va créer une collection qui va contenir des articles à vendre pour exemple
 var histo_etats_Schema = new mongoose.Schema({
   nom_plante: String,
   temperature: Number,
   humidite: Number,
   luminosite: Number,
   reservoir: Number,
-  date : Date
+  date: Date
 })
 var histo_etats = mongoose.model('histo_etats', histo_etats_Schema)
 
