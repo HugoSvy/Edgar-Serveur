@@ -1,138 +1,126 @@
 // Lancement du serveur Express.js
 const express = require('express')
 const cors = require('cors')
-const app = express()
+const mongoose = require('mongoose')
 
-// Activer CORS pour toutes les routes
+const app = express()
 app.use(cors())
 
 //-----------------------------------INIT BDD-----------------------------------
-var mongoose = require('mongoose')
 
-// Connexion à MongoDB
-mongoose.connect('mongodb://127.0.0.1/db_pot')
-mongoose.Promise = global.Promise
-mongoose.connection.on('error', console.error.bind(console, 'Une erreur de connexion MongoDB est survenue :'))
+// Connexion à MongoDB avec gestion d'erreur et message de succès
+mongoose.connect('mongodb://127.0.0.1/db_pot', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log("Connexion MongoDB réussie.");
+}).catch((error) => {
+  console.error('Une erreur de connexion MongoDB est survenue :', error);
+});
 
-var histo_etats_Schema = new mongoose.Schema({
+const histo_etats_Schema = new mongoose.Schema({
   nom_plante: String,
   temperature: Number,
   humidite: Number,
   luminosite: Number,
   reservoir: Number,
   date: Date
-})
-var histo_etats = mongoose.model('histo_etats', histo_etats_Schema)
+});
+
+const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
 
 //-----------------------------------FIN INIT BDD-----------------------------------
 
-// Quand on appelera le lien "/" de notre serveur, c'est ce code qui sera exécuté
-app.get('/', function (req, res) {
-  // actions exécutées
-  console.log('quelqu\'un a appelé le lien "/", je lui réponds "Hello World!".')
-  res.send('Ici c\' est la plante!')
-})
- 
-// Quand on appelera le lien "/toto" de notre serveur, c'est ce code qui sera exécuté
-app.get('/toto', function (req, res) {
-  // actions exécutées
-  console.log('quelqu\'un a appelé le lien "/toto", je lui réponds "Bonjour toto".')
-  res.send('Bonjour toto')
-})
- 
-// Si des paramètres sont passés dans le lien, ils peuvent être récupéré comme ceci :
-// Par exemple, si on appelle le lien /voir?pseudo=david
-app.get('/voir', function (req, res) {
-  // req.query contient un objet contenant tous les paramètres
-  console.log(req.query) // Affichera : { "pseudo": "david" }
-  // Pour récupérer un paramètre précis, on pourra faire :
-  console.log(req.query.pseudo) // Affichera : david
- 
-  console.log('quelqu\'un a appelé le lien "/voir", bonjour ' + req.query.pseudo + '.')
-  res.send('Bonjour ' + req.query.pseudo + '')
-})
+// Route principale
+app.get('/', (req, res) => {
+  console.log('quelqu\'un a appelé le lien "/", je lui réponds "Hello World!".');
+  res.send('Ici c\' est la plante!');
+});
 
-app.get('/alerteNiveauEau', function (req, res) {
-  res.send('Alerte Niveayu eau')
-})
+// Route pour /toto
+app.get('/toto', (req, res) => {
+  console.log('quelqu\'un a appelé le lien "/toto", je lui réponds "Bonjour toto".');
+  res.send('Bonjour toto');
+});
 
-app.get('/etatGlobal', function (req, res) { //température, humidité, luminosité, réservoir
-  console.log(req.query) //https://allowed-holy-magpie.ngrok-free.app/etatGlobal?nom=test&temperature=25&humidite=20&luminosite=789&reservoir=2&date=2023-09-25 08:15:00
-  var nouvelEtat = new histo_etats({
-    nom_plante: req.query.nom,
-    temperature: req.query.temperature,
-    humidite: req.query.humidite/2,
-    luminosite: req.query.luminosite,
-    reservoir: req.query.reservoir,
-    date : req.query.date
-  })
-  // Enregistrer le nouveau document dans la base de données MongoDB
-  nouvelEtat.save(function (err) {
+// Route pour /voir avec récupération de paramètres
+app.get('/voir', (req, res) => {
+  const pseudo = req.query.pseudo;
+  if (pseudo) {
+    console.log(`quelqu'un a appelé le lien "/voir", bonjour ${pseudo}.`);
+    res.send(`Bonjour ${pseudo}`);
+  } else {
+    res.send('Paramètre pseudo manquant.');
+  }
+});
+
+// Route pour /alerteNiveauEau
+app.get('/alerteNiveauEau', (req, res) => {
+  res.send('Alerte Niveau eau');
+});
+
+// Route pour /etatGlobal : enregistrement d'un nouvel état
+app.get('/etatGlobal', (req, res) => {
+  const { nom, temperature, humidite, luminosite, reservoir, date } = req.query;
+
+  const nouvelEtat = new HistoEtat({
+    nom_plante: nom,
+    temperature: Number(temperature),
+    humidite: Number(humidite) / 2,
+    luminosite: Number(luminosite),
+    reservoir: Number(reservoir),
+    date: new Date(date)
+  });
+
+  nouvelEtat.save((err) => {
     if (err) {
-      console.log('Une erreur MongoDB s\'est produite...')
-      res.send('Erreur lors de l\'ajout')
-      console.log(err)
+      console.error('Une erreur MongoDB s\'est produite lors de l\'enregistrement:', err);
+      res.status(500).send('Erreur lors de l\'ajout');
     } else {
-      console.log('Le nouvel élément de l\'histo a bien été enregistré.')
-      res.send('Bien ajouté à la DB')
+      console.log('Le nouvel élément de l\'histo a bien été enregistré.');
+      res.send('Bien ajouté à la DB');
     }
-  })
-})
+  });
+});
 
-app.get('/recherche', function (req, res) { //https://allowed-holy-magpie.ngrok-free.app/etatGlobal?nom=test
-  //http://localhost:8000/recherche?nom=test
-  // Chercher des documents
-  // Ici, pour l'exemple, on va chercher tous les articles dont le champ "nomDeLArticle" est égal à "Banane de Guadeloupe"
-  // La méthode .find() est l'équivalent du requête SQL
-  histo_etats.find({ 'nom_plante': req.query.nom }, function (err, resultats) {
+// Route pour /recherche : recherche par nom de plante
+app.get('/recherche', (req, res) => {
+  const { nom } = req.query;
+
+  HistoEtat.find({ 'nom_plante': nom }, (err, resultats) => {
     if (err) {
-      console.log('Une erreur MongoDB s\'est produite...')
-      console.log(err)
+      console.error('Une erreur MongoDB s\'est produite lors de la recherche:', err);
+      res.status(500).send('Erreur lors de la recherche');
+    } else if (resultats.length === 0) {
+      res.status(404).send("Aucun document trouvé pour ce nom.");
     } else {
-      console.log('Résultats de la recherche :')
-      console.log(resultats)
-      console.log(resultats[0].temperature)
-      res.send("liste états plante test :" + resultats + " température : " + resultats[0].temperature)
-      
+      console.log('Résultats de la recherche :', resultats);
+      res.json(resultats);
     }
-  })
-})
+  });
+});
 
-app.get('/last_recherche', function (req, res) {
-  console.log("Requête reçue sur /last_recherche avec paramètres : ", req.query); // Affiche les paramètres de la requête
+// Route pour /last_recherche : recherche du dernier état par nom de plante
+app.get('/last_recherche', (req, res) => {
+  const { nom } = req.query;
 
-  histo_etats.find({ 'nom_plante': req.query.nom })
+  HistoEtat.find({ 'nom_plante': nom })
     .sort({ date: -1 })
     .limit(1)
-    .exec(function (err, resultats) {
+    .exec((err, resultats) => {
       if (err) {
-        console.log("Une erreur MongoDB s'est produite...");
-        console.log(err);
+        console.error("Une erreur MongoDB s'est produite lors de la dernière recherche:", err);
         res.status(500).send("Erreur du serveur");
       } else if (resultats.length === 0) {
-        console.log("Aucun document trouvé pour /last_recherche");
         res.status(404).send("Aucun document trouvé");
       } else {
-        console.log("Résultat le plus récent de la recherche : ", resultats[0]);
+        console.log("Résultat le plus récent de la recherche :", resultats[0]);
         res.json(resultats[0]);
       }
     });
 });
 
-
-
-/*
-const http = require('http')
-http.get("http://ADRESSE_SIGFOX/refresh", function (response) { //Demande de rafraichissement des infos
-  console.log("response = " + response)
-})
-*/ 
-// Plusieurs paramètres peuvent être passés en même temps dans le lien, dans ce cas, ils doivent être séparés par des "&" :
-// Par exemple, le lien suivant peut être appelé : /voir?pseudo=david&age=27&ville=angers
-// Dans ce cas, si on fait console.log(req.query) affichera : { "pseudo": "david", "age": "27", "ville": "angers" }
- 
-// On démarre le serveur sur le port 8000
-app.listen(8000, function () {
-  console.log('Le serveur écoute sur son port 8000')
-})
-
+// Démarrage du serveur
+app.listen(8000, () => {
+  console.log('Le serveur écoute sur le port 8000');
+});
