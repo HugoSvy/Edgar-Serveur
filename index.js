@@ -29,6 +29,14 @@ const histo_etats_Schema = new mongoose.Schema({
 
 const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
 
+const message_schema = new mongoose.Schema({
+  device: String,
+  data: String,
+  time: Date
+});
+
+const message_db = mongoose.model('sigfox', message_schema);
+
 //-----------------------------------FIN INIT BDD-----------------------------------
 
 // Route principale
@@ -119,6 +127,49 @@ app.get('/last_recherche', (req, res) => {
       }
     });
 });
+
+//https://tolerant-namely-swift.ngrok-free.app/message?id={device}&time={time}&data={data}
+app.get('/message', (req, res) => {
+  
+  // Afficher les paramètres reçus pour débogage
+  console.log('Paramètres reçus:', req.query);
+
+  // Assurez-vous que les noms des paramètres correspondent
+  const { device, time, data } = req.query;
+
+  // Vérification pour s'assurer que les valeurs sont présentes et valides
+  if (!device || !time || !data) {
+    return res.status(400).send('Paramètres manquants ou invalides.');
+  }
+
+  // Création d'une date valide à partir du paramètre 'time'
+  const date = new Date(time);
+  if (isNaN(date.getTime())) {
+    return res.status(400).send('Le paramètre "time" est invalide.');
+  }
+
+  // Créer un nouvel objet HistoEtat
+  const message = new message_db({
+    device: device,
+    data: data,
+    time: date
+  });
+
+  // Afficher le nouvel objet pour débogage
+  console.log('Nouvel état créé:', message);
+
+  // Sauvegarder dans la base de données
+  message.save((err) => {
+    if (err) {
+      console.error('Erreur MongoDB lors de l\'enregistrement:', err);
+      return res.status(500).send('Erreur lors de l\'ajout dans la DB');
+    } else {
+      console.log('Le nouvel élément a bien été enregistré.');
+      return res.status(200).send('Bien ajouté à la DB');
+    }
+  });
+});
+
 
 // Démarrage du serveur
 app.listen(8000, () => {
