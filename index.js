@@ -32,7 +32,7 @@ const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
 const message_schema = new mongoose.Schema({
   device: String,
   data: String,
-  time: Date
+  time: String
 });
 
 const message_db = mongoose.model('sigfox', message_schema);
@@ -142,17 +142,11 @@ app.get('/message', (req, res) => {
     return res.status(400).send('Paramètres manquants ou invalides.');
   }
 
-  // Création d'une date valide à partir du paramètre 'time'
-  const date = new Date(time);
-  if (isNaN(date.getTime())) {
-    return res.status(400).send('Le paramètre "time" est invalide.');
-  }
-
   // Créer un nouvel objet HistoEtat
   const message = new message_db({
     device: device,
     data: data,
-    time: date
+    time: time
   });
 
   // Afficher le nouvel objet pour débogage
