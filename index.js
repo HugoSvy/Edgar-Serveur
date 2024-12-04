@@ -47,8 +47,13 @@ app.get('/', (req, res) => {
 
 // Route pour /toto
 app.get('/toto', (req, res) => {
-  console.log('quelqu\'un a appelé le lien "/toto", je lui réponds "Bonjour toto".');
-  res.send('Bonjour toto');
+  console.log('Quelqu\'un a appelé le lien "/toto", je lui réponds avec un JSON.');
+  const response = {
+    "1234": {
+      "downlinkData": "1234567890123456"
+    }
+  };
+  res.json(response);
 });
 
 // Route pour /voir avec récupération de paramètres
