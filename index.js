@@ -45,6 +45,28 @@ app.get('/', (req, res) => {
   res.send('Ici c\' est la plante!');
 });
 
+app.get('/hexa', (req, res) => {
+  console.log('quelqu\'un a appelé le lien "/hexa".');
+  // Exemple d'utilisation
+  //const encodedHex = "0292627161A812";
+  //2 2342 625 25000 1 2
+  const encodedHex = req.query.hexa;
+  const sizes = {
+    TypeMessage: 8, // Taille du TypeMessage en bits
+    Temp: 10,       // Taille de la température en bits
+    Humidite: 10,   // Taille de l'humidité en bits
+    Luminosite: 10, // Taille de la luminosité en bits
+    Reservoir: 1,   // Taille du réservoir en bits
+    TempExtreme: 2  // Taille des températures extrêmes en bits
+  };
+
+  const decodedValues = decode(encodedHex, sizes);
+  console.log(decodedValues);
+
+  res.send(decodedValues);
+});
+
+
 // Route pour /toto
 app.get('/config', (req, res) => {
   const id = req.query.id; 
@@ -181,3 +203,33 @@ app.get('/message', (req, res) => {
 app.listen(8000, () => {
   console.log('Le serveur écoute sur le port 8000');
 });
+
+function decode(encodedHex, sizes) {
+  // Étape 1 : Conversion de l'hexadécimal en une chaîne binaire
+  let binaryString = "";
+  console.log('Etape 1 : conversion hexa en binaire');
+  for (let i = 0; i < encodedHex.length; i++) {
+      binaryString += parseInt(encodedHex[i], 16).toString(2).padStart(4, "0");
+      console.log(binaryString);
+  }
+
+  // Étape 2 : Découper la chaîne binaire en chainons selon les tailles spécifiées
+  console.log('Etape 2 : decouper chaine binaire en chainons selon taille spe');
+  let startIndex = 0;
+  const values = {};
+  for (let [key, size] of Object.entries(sizes)) {
+      values[key] = binaryString.slice(startIndex, startIndex + size);
+      console.log(values[key]);
+      startIndex += size;
+  }
+
+  // Étape 3 : Conversion des chainons en valeurs lisibles
+  console.log('Etape 3 : conversion des chainons en valeurs lisibles');
+  for (let key in values) {
+      values[key] = parseInt(values[key], 2); // Convertir chaque valeur en décimal
+      console.log(values[key]);
+  }
+
+  return values;
+}
+
