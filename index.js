@@ -48,16 +48,16 @@ app.get('/', (req, res) => {
 app.get('/hexa', (req, res) => {
   console.log('quelqu\'un a appelé le lien "/hexa".');
   // Exemple d'utilisation
-  //const encodedHex = "0292627161A812";
+  //const encodedHex = "244671753048";
   //2 2342 625 25000 1 2
   const encodedHex = req.query.hexa;
   const sizes = {
-    TypeMessage: 8, // Taille du TypeMessage en bits
+    TypeMessage: 4, // Taille du TypeMessage en bits
     Temp: 10,       // Taille de la température en bits
     Humidite: 10,   // Taille de l'humidité en bits
-    Luminosite: 10, // Taille de la luminosité en bits
-    Reservoir: 1,   // Taille du réservoir en bits
-    TempExtreme: 2  // Taille des températures extrêmes en bits
+    Luminosite: 16, // Taille de la luminosité en bits
+    Reservoir: 2,   // Taille du réservoir en bits
+    TempExtreme: 4  // Taille des températures extrêmes en bits
   };
 
   const decodedValues = decode(encodedHex, sizes);
@@ -206,6 +206,7 @@ app.listen(8000, () => {
 
 function decode(encodedHex, sizes) {
   // Étape 1 : Conversion de l'hexadécimal en une chaîne binaire
+  console.log(encodedHex);
   let binaryString = "";
   console.log('Etape 1 : conversion hexa en binaire');
   for (let i = 0; i < encodedHex.length; i++) {
@@ -229,6 +230,8 @@ function decode(encodedHex, sizes) {
       values[key] = parseInt(values[key], 2); // Convertir chaque valeur en décimal
       console.log(values[key]);
   }
+  //convertir la temp
+  values.Temp = values.Temp/10;
 
   return values;
 }
