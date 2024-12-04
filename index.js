@@ -46,15 +46,22 @@ app.get('/', (req, res) => {
 });
 
 // Route pour /toto
-app.get('/toto', (req, res) => {
-  console.log('Quelqu\'un a appelé le lien "/toto", je lui réponds avec un JSON.');
-  const response = {
-    "1234": {
-      "downlinkData": "1234567890123456"
-    }
-  };
-  res.json(response);
+app.get('/config', (req, res) => {
+  const id = req.query.id; 
+  console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
+  
+  if (id) {
+    const response = {
+      [id]: { // Utilisation des crochets pour définir la clé dynamiquement
+        "downlinkData": "7b"
+      }
+    };
+    res.json(response);
+  } else {
+    res.send('Paramètre id manquant.');
+  }
 });
+
 
 // Route pour /voir avec récupération de paramètres
 app.get('/voir', (req, res) => {
