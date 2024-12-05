@@ -37,6 +37,18 @@ const message_schema = new mongoose.Schema({
 
 const message_db = mongoose.model('sigfox', message_schema);
 
+const etat = new mongoose.Schema({
+  TypeMessage: String,
+  Temp: String,
+  Humidite: String,
+  Luminosite: String,
+  Reservoir: String,
+  TempExtreme: String,
+  Date: String
+});
+
+const etat_db = mongoose.model('etat hexa', etat);
+
 //-----------------------------------FIN INIT BDD-----------------------------------
 
 // Route principale
@@ -61,13 +73,43 @@ app.get('/hexa', (req, res) => {
   };
 
   const decodedValues = decode(encodedHex, sizes);
-  console.log(decodedValues);
+  //console.log(decodedValues);
 
-  res.send(decodedValues);
+  const now = new Date();
+  const formattedDate = now.toLocaleString("fr-FR", { //à changer dans le futur 
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  
+  console.log("Date formatée :", formattedDate);
+  
+  const etat = new etat_db({
+    TypeMessage: decodedValues.TypeMessage,
+    Temp: decodedValues.Temp,
+    Humidite: decodedValues.Humidite,
+    Luminosite: decodedValues.Luminosite,
+    Reservoir: decodedValues.Reservoir,
+    TempExtreme: decodedValues.TempExtreme,
+    Date: formattedDate 
+  });
+  console.log(etat);
+
+  etat.save((err) => {
+    if (err) {
+      console.error('Une erreur MongoDB s\'est produite lors de l\'enregistrement:', err);
+      res.status(500).send('Erreur lors de l\'ajout');
+    } else {
+      console.log('Le nouvel élément de l\'histo a bien été enregistré.');
+      res.send('Bien ajouté à la DB');
+    }
+  });
 });
 
 
-// Route pour /toto
+// Route pour /config
 app.get('/config', (req, res) => {
   const id = req.query.id; 
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
