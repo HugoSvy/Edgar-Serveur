@@ -114,10 +114,44 @@ app.get('/config', (req, res) => {
   const id = req.query.id; 
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
   
+  const sizes = {
+    TypeMessage: 4,  // Taille du TypeMessage en bits
+    Temp: 10,        // Taille de la température en bits
+    Humidite: 10,    // Taille de l'humidité en bits
+    Luminosite: 16,  // Taille de la luminosité en bits
+    Reservoir: 2,    // Taille du réservoir en bits
+    TempExtreme: 4   // Taille des températures extrêmes en bits
+  };
+
+  const temp = 27.3;
+  const humid = 625;
+  const lumi = 30000;
+  const reserv = 1;
+  const tempMax = 2;
+
+  const config = {
+    [id]: {
+      TypeMessage: 2, //mettre à 4
+      Temp: temp, // Conversion en dixièmes avant encodage
+      Humidite: humid,
+      Luminosite: lumi,
+      Reservoir: reserv,
+      TempExtreme: tempMax,
+      //Date: ,
+    }
+  };
+
   if (id) {
+
+    const valuesToEncode = config[id];
+
+    //encodage
+    const EncodedHex = encode(valuesToEncode, sizes);
+    console.log(EncodedHex);
+
     const response = {
       [id]: { // Utilisation des crochets pour définir la clé dynamiquement
-        "downlinkData": "7b"
+        "config": EncodedHex,
       }
     };
     res.json(response);
@@ -276,5 +310,43 @@ function decode(encodedHex, sizes) {
   values.Temp = values.Temp/10;
 
   return values;
+}
+
+function encode(values, sizes) {
+  // Étape 1 : Convertir chaque valeur en une chaîne binaire avec les tailles spécifiées
+  console.log('Étape 1 : conversion des valeurs en binaire');
+  let binaryString = "";
+  for (let [key, size] of Object.entries(sizes)) {
+      let binaryValue = values[key];
+      
+      // Si le champ est "Temp", appliquer l'échelle inversée
+      if (key === "Temp") {
+          binaryValue = Math.round(binaryValue * 10); // Multiplier par 10 pour restaurer la valeur originale
+      }
+
+      // Convertir en binaire et compléter avec des zéros pour atteindre la taille spécifiée
+      const binarySegment = binaryValue.toString(2).padStart(size, "0");
+      binaryString += binarySegment;
+      console.log(`${key} (${binaryValue}) : ${binarySegment}`);
+  }
+
+  // Étape 1.5 : Vérifier si la chaîne binaire fait un multiple de 8 bits
+  const padding = 8 - (binaryString.length % 8);
+  if (padding !== 8) {
+      binaryString = binaryString.padEnd(binaryString.length + padding, "0");
+      console.log(`Chaîne binaire complétée avec ${padding} zéro(s) pour atteindre un multiple de 8 bits.`);
+  }
+
+  // Étape 2 : Convertir la chaîne binaire en une chaîne hexadécimale
+  console.log('Étape 2 : conversion de la chaîne binaire en hexadécimal');
+  let encodedHex = "";
+  for (let i = 0; i < binaryString.length; i += 4) {
+      const binaryChunk = binaryString.slice(i, i + 4);
+      const hexValue = parseInt(binaryChunk, 2).toString(16);
+      encodedHex += hexValue;
+      console.log(`Chunk binaire : ${binaryChunk} => Hex : ${hexValue}`);
+  }
+
+  return encodedHex.toUpperCase(); // Retourner la chaîne hexadécimale en majuscules
 }
 
