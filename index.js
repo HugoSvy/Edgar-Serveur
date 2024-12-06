@@ -19,12 +19,15 @@ mongoose.connect('mongodb://127.0.0.1/db_pot', {
 });
 
 const histo_etats_Schema = new mongoose.Schema({
+  device: String,
+  data: String,
   nom_plante: String,
   temperature: Number,
   humidite: Number,
   luminosite: Number,
   reservoir: Number,
   date: Date
+
 });
 
 const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
@@ -32,19 +35,24 @@ const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
 const message_schema = new mongoose.Schema({
   device: String,
   data: String,
-  time: String
+  time: String,
+  station: String
 });
 
 const message_db = mongoose.model('sigfox', message_schema);
 
 const etat = new mongoose.Schema({
+  device: String,
+  data: String,
   TypeMessage: String,
   Temp: String,
   Humidite: String,
   Luminosite: String,
   Reservoir: String,
   TempExtreme: String,
-  Date: String
+  Date: String,
+  time: String,
+  station: String
 });
 
 const etat_db = mongoose.model('etat hexa', etat);
@@ -238,32 +246,65 @@ app.get('/last_recherche', (req, res) => {
     });
 });
 
-//https://tolerant-namely-swift.ngrok-free.app/message?id={device}&time={time}&data={data}
+//https://tolerant-namely-swift.ngrok-free.app/message?id={device}&time={time}&data={data}&station={station}
 app.get('/message', (req, res) => {
   
   // Afficher les paramètres reçus pour débogage
+  console.log('/message a été appelé');
   console.log('Paramètres reçus:', req.query);
 
   // Assurez-vous que les noms des paramètres correspondent
-  const { device, time, data } = req.query;
+  const { device, time, data, station } = req.query;
 
   // Vérification pour s'assurer que les valeurs sont présentes et valides
-  if (!device || !time || !data) {
+  if (!device || !time || !data || !station) {
     return res.status(400).send('Paramètres manquants ou invalides.');
   }
 
-  // Créer un nouvel objet HistoEtat
-  const message = new message_db({
+  const encodedHex = req.query.data;
+  const sizes = {
+    TypeMessage: 4, // Taille du TypeMessage en bits
+    Temp: 10,       // Taille de la température en bits
+    Humidite: 10,   // Taille de l'humidité en bits
+    Luminosite: 16, // Taille de la luminosité en bits
+    Reservoir: 2,   // Taille du réservoir en bits
+    TempExtreme: 4  // Taille des températures extrêmes en bits
+  };
+
+  const decodedValues = decode(encodedHex, sizes);
+  //console.log(decodedValues);
+
+  const now = new Date();
+  const formattedDate = now.toLocaleString("fr-FR", { //à changer dans le futur 
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  
+  console.log("Date formatée :", formattedDate);
+  
+  const etat = new etat_db({
     device: device,
     data: data,
-    time: time
+    TypeMessage: decodedValues.TypeMessage,
+    Temp: decodedValues.Temp,
+    Humidite: decodedValues.Humidite,
+    Luminosite: decodedValues.Luminosite,
+    Reservoir: decodedValues.Reservoir,
+    TempExtreme: decodedValues.TempExtreme,
+    Date: formattedDate,
+    time: time,
+    station: station 
   });
+  //console.log(etat);
 
   // Afficher le nouvel objet pour débogage
-  console.log('Nouvel état créé:', message);
+  console.log('Nouvel état créé:', etat);
 
   // Sauvegarder dans la base de données
-  message.save((err) => {
+  etat.save((err) => {
     if (err) {
       console.error('Erreur MongoDB lors de l\'enregistrement:', err);
       return res.status(500).send('Erreur lors de l\'ajout dans la DB');
