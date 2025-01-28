@@ -13,7 +13,7 @@ router.get('/liste_etats', async (req, res) => {
 
 router.get('/last_recherche', async (req, res) => {
     try {
-      const etats = await Etat.find(); // Récupérer tous les états dans MongoDB
+      const etats = await Etat.find();
       res.json(etats);
     } catch (error) {
       res.status(500).send('Erreur lors de la récupération des états.');

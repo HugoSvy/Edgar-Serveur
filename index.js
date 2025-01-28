@@ -27,19 +27,25 @@ const histo_etats_Schema = new mongoose.Schema({
   luminosite: Number,
   reservoir: Number,
   date: Date
-
 });
 
 const HistoEtat = mongoose.model('histo_etats', histo_etats_Schema);
 
 const message_schema = new mongoose.Schema({
   device: String,
-  data: String,
-  time: String,
-  station: String
+  temp_max: Number,
+  temp_min: Number,
+  lum_max: Number,
+  lum_min: Number,
+  lum_debut: String,
+  lum_duree: Number,
+  nb_arrosage: Number,
+  nb_arrosage: Number,
+  tps_arrosage: Number,
+  date: { type: Date, default: Date.now }
 });
 
-const message_db = mongoose.model('sigfox', message_schema);
+const Config = mongoose.model('configs', message_schema);
 
 const etat = new mongoose.Schema({
   device: String,
@@ -63,6 +69,34 @@ const etat_db = mongoose.model('etat hexa', etat);
 app.get('/', (req, res) => {
   console.log('quelqu\'un a appelé le lien "/", je lui réponds "Hello World!".');
   res.send('Ici c\' est la plante!');
+});
+
+// https://tolerant-namely-swift.ngrok-free.app/save_config?device=test&temp_max=17.2&temp_min=23.7&lum_max=30000&lum_min=1000&lum_debut=8:30&lum_duree=480&nb_arrosage=3&tps_arrosage=2
+app.get('/save_config', (req, res) => {
+  console.log("/save_config");
+  const { device, temp_max, temp_min, lum_max, lum_min, lum_debut, lum_duree, nb_arrosage, tps_arrosage} = req.query;
+
+  const nouvelConfig = new Config({
+    device: device,
+    temp_max: temp_max,
+    temp_min: temp_min,
+    lum_max: lum_max,
+    lum_min: lum_min,
+    lum_debut: lum_debut,
+    lum_duree: lum_duree,
+    nb_arrosage: nb_arrosage,
+    tps_arrosage: tps_arrosage,
+  });
+
+  nouvelConfig.save((err) => {
+    if (err) {
+      console.error('Une erreur MongoDB s\'est produite lors de l\'enregistrement:', err);
+      res.status(500).send('Erreur lors de l\'ajout');
+    } else {
+      console.log('Le nouvel élément de l\'histo a bien été enregistré.');
+      res.send('Bien ajouté à la DB');
+    }
+  });
 });
 
 app.get('/hexa', (req, res) => {
@@ -116,7 +150,53 @@ app.get('/hexa', (req, res) => {
   });
 });
 
+// Route pour /config
+// A FINIR ET TESTER LE NEW ENCODE 
+app.get('/config', (req, res) => {
 
+  // Afficher les paramètres reçus pour débogage
+  console.log('/config a été appelé');
+
+  const { device, /*data,*/ ack } = req.query;
+
+  // Vérification pour s'assurer que les valeurs sont présentes et valides
+  if (!device || !ack) {
+    return res.status(400).send('Paramètres manquants ou invalides.');
+  }
+
+  const sizes = {
+    TypeMessage: 4,  // Taille du TypeMessage en bits
+    Temp: 10,        // Taille de la température en bits
+    Humidite: 10,    // Taille de l'humidité en bits
+    Luminosite: 16,  // Taille de la luminosité en bits
+    Reservoir: 2,    // Taille du réservoir en bits
+    TempExtreme: 4   // Taille des températures extrêmes en bits
+  };
+
+  Config.find({ 'device': device }, (err, resultats) => {
+    if (err) {
+      console.error('Une erreur MongoDB s\'est produite lors de la recherche:', err);
+      res.status(500).send('Erreur lors de la recherche');
+    } else if (resultats.length === 0) {
+      res.status(404).send("Aucun document trouvé pour ce nom.");
+    } else {
+      console.log('Résultats de la recherche :', resultats);
+      const temp_max = resultats.temp_max;
+      const temp_min = resultats.temp_min;
+      const lum_max = resultats.lum_max;
+      const lum_min = resultats.lum_min;
+      const nb_arrosage = resultats.nb_arrosage;
+      const tps_arrosage = resultats.tps_arrosage;
+      const date = resultats.date;
+
+      const EncodedHex = encode(valuesToEncode, sizes);
+      console.log(EncodedHex);
+      res.json(EncodedHex);
+    }
+  });
+});
+
+/*
 // Route pour /config
 app.get('/config', (req, res) => {
   const id = req.query.id; 
@@ -166,7 +246,7 @@ app.get('/config', (req, res) => {
   } else {
     res.send('Paramètre id manquant.');
   }
-});
+});*/
 
 
 // Route pour /voir avec récupération de paramètres
