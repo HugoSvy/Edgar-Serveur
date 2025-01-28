@@ -246,6 +246,26 @@ app.get('/last_recherche', (req, res) => {
     });
 });
 
+// Route pour /last_recherche : recherche du dernier état par nom de plante
+app.get('/last_recherche2', (req, res) => {
+  const { device } = req.query;
+
+  etat_db.find({ 'device': device })
+    .sort({ date: -1 })
+    .limit(1)
+    .exec((err, resultats) => {
+      if (err) {
+        console.error("Une erreur MongoDB s'est produite lors de la dernière recherche:", err);
+        res.status(500).send("Erreur du serveur");
+      } else if (resultats.length === 0) {
+        res.status(404).send("Aucun document trouvé");
+      } else {
+        console.log("Résultat le plus récent de la recherche :", resultats[0]);
+        res.json(resultats[0]);
+      }
+    });
+});
+
 //https://tolerant-namely-swift.ngrok-free.app/message?id={device}&time={time}&data={data}&station={station}
 app.get('/message', (req, res) => {
   
@@ -390,4 +410,3 @@ function encode(values, sizes) {
 
   return encodedHex.toUpperCase(); // Retourner la chaîne hexadécimale en majuscules
 }
-
