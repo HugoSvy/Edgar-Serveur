@@ -152,7 +152,7 @@ app.get('/hexa', (req, res) => {
 
 // Route pour /config
 // A FINIR ET TESTER LE NEW ENCODE 
-app.get('/config', (req, res) => {
+app.get('/new_config', (req, res) => {
 
   // Afficher les paramètres reçus pour débogage
   console.log('/config a été appelé');
@@ -196,9 +196,9 @@ app.get('/config', (req, res) => {
   });
 });
 
-/*
+
 // Route pour /config
-app.get('/config', (req, res) => {
+app.post('/config', (req, res) => {
   const id = req.query.id; 
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
   
@@ -246,7 +246,7 @@ app.get('/config', (req, res) => {
   } else {
     res.send('Paramètre id manquant.');
   }
-});*/
+});
 
 
 // Route pour /voir avec récupération de paramètres
