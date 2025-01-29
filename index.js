@@ -198,11 +198,14 @@ app.get('/new_config', (req, res) => {
 
 
 // Route pour /config
-// https://tolerant-namely-swift.ngrok-free.app/config?id=test
+// curl -X POST "https://tolerant-namely-swift.ngrok-free.app/config?id=test"
 app.post('/config', (req, res) => {
   const id = req.query.id; 
+  const ack = req.query.ack; 
+  console.log(req.query);
+  console.log(new Date());
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
-  
+
   const sizes = {
     TypeMessage: 4,  // Taille du TypeMessage en bits
     Temp: 10,        // Taille de la température en bits
@@ -230,22 +233,25 @@ app.post('/config', (req, res) => {
     }
   };
 
-  if (id) {
+  if (ack) {
 
     const valuesToEncode = config[id];
 
     //encodage
-    const EncodedHex = encode(valuesToEncode, sizes);
-    console.log(EncodedHex);
+    //const EncodedHex = encode(valuesToEncode, sizes);
+    //console.log(EncodedHex);
 
     const response = {
-      [id]: { // Utilisation des crochets pour définir la clé dynamiquement
-        "config": EncodedHex,
+      "ABC" : {
+        "downlinkData": "{0102030405060708}"
       }
     };
+    res.status(201);
+    console.log("true");
     res.json(response);
-  } else {
-    res.send('Paramètre id manquant.');
+    } else {
+    console.log('ack false');
+    res.send('ack false');
   }
 });
 
@@ -358,9 +364,10 @@ app.get('/message', (req, res) => {
   const { device, time, data, station } = req.query;
 
   // Vérification pour s'assurer que les valeurs sont présentes et valides
+  /*
   if (!device || !time || !data || !station) {
     return res.status(400).send('Paramètres manquants ou invalides.');
-  }
+  }*/
 
   const encodedHex = req.query.data;
   const sizes = {
