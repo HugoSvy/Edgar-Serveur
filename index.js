@@ -198,6 +198,7 @@ app.get('/new_config', (req, res) => {
 
 
 // Route pour /config
+// https://tolerant-namely-swift.ngrok-free.app/config?id=test
 app.post('/config', (req, res) => {
   const id = req.query.id; 
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
