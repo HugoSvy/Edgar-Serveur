@@ -74,7 +74,7 @@ app.get('/', (req, res) => {
 // https://tolerant-namely-swift.ngrok-free.app/save_config?device=test&temp_max=17.2&temp_min=23.7&lum_max=30000&lum_min=1000&lum_debut=8:30&lum_duree=480&nb_arrosage=3&tps_arrosage=2
 app.get('/save_config', (req, res) => {
   console.log("/save_config");
-  const { device, temp_max, temp_min, lum_max, lum_min, lum_debut, lum_duree, nb_arrosage, tps_arrosage} = req.query;
+  const { device, temp_max, temp_min, lum_max, lum_min, lum_debut, lum_duree, nb_arrosage, tps_arrosage } = req.query;
 
   const nouvelConfig = new Config({
     device: device,
@@ -125,9 +125,9 @@ app.get('/hexa', (req, res) => {
     hour: "2-digit",
     minute: "2-digit",
   });
-  
+
   console.log("Date formatée :", formattedDate);
-  
+
   const etat = new etat_db({
     TypeMessage: decodedValues.TypeMessage,
     Temp: decodedValues.Temp,
@@ -135,7 +135,7 @@ app.get('/hexa', (req, res) => {
     Luminosite: decodedValues.Luminosite,
     Reservoir: decodedValues.Reservoir,
     TempExtreme: decodedValues.TempExtreme,
-    Date: formattedDate 
+    Date: formattedDate
   });
   console.log(etat);
 
@@ -200,8 +200,8 @@ app.get('/new_config', (req, res) => {
 // Route pour /config
 // curl -X POST "https://tolerant-namely-swift.ngrok-free.app/config?id=test"
 app.post('/config', (req, res) => {
-  const id = req.query.id; 
-  const ack = req.query.ack; 
+  const id = req.query.id;
+  const ack = req.query.ack;
   console.log(req.query);
   console.log(new Date());
   console.log('Quelqu\'un a appelé le lien "/config", je lui réponds avec un JSON.');
@@ -237,19 +237,19 @@ app.post('/config', (req, res) => {
 
     const valuesToEncode = config[id];
 
-    //encodage
-    //const EncodedHex = encode(valuesToEncode, sizes);
-    //console.log(EncodedHex);
+    // encodage
+    const EncodedHex = encode(valuesToEncode, sizes);
+    console.log(EncodedHex);
 
     const response = {
-      "ABC" : {
+      "ABC": {
         "downlinkData": "{0102030405060708}"
       }
     };
     res.status(201);
     console.log("true");
     res.json(response);
-    } else {
+  } else {
     console.log('ack false');
     res.send('ack false');
   }
@@ -354,8 +354,9 @@ app.get('/last_recherche2', (req, res) => {
 });
 
 //https://tolerant-namely-swift.ngrok-free.app/message?id={device}&time={time}&data={data}&station={station}
+// 244671753048
 app.get('/message', (req, res) => {
-  
+
   // Afficher les paramètres reçus pour débogage
   console.log('/message a été appelé');
   console.log('Paramètres reçus:', req.query);
@@ -379,6 +380,10 @@ app.get('/message', (req, res) => {
     TempExtreme: 4  // Taille des températures extrêmes en bits
   };
 
+  // Exemple d'utilisation
+  const typeMessage = getTypeMessage(encodedHex, sizes);
+  console.log("Type de message récupéré:", typeMessage);
+
   const decodedValues = decode(encodedHex, sizes);
   //console.log(decodedValues);
 
@@ -390,9 +395,9 @@ app.get('/message', (req, res) => {
     hour: "2-digit",
     minute: "2-digit",
   });
-  
+
   console.log("Date formatée :", formattedDate);
-  
+
   const etat = new etat_db({
     device: device,
     data: data,
@@ -404,7 +409,7 @@ app.get('/message', (req, res) => {
     TempExtreme: decodedValues.TempExtreme,
     Date: formattedDate,
     time: time,
-    station: station 
+    station: station
   });
   //console.log(etat);
 
@@ -429,14 +434,32 @@ app.listen(8000, () => {
   console.log('Le serveur écoute sur le port 8000');
 });
 
+function getTypeMessage(encodedHex, sizes) {
+  console.log('Extraction du TypeMessage depuis les données');
+
+  // Convertir l'hexadécimal en binaire
+  let binaryString = "";
+  for (let i = 0; i < encodedHex.length; i++) {
+    binaryString += parseInt(encodedHex[i], 16).toString(2).padStart(4, "0");
+  }
+
+  // Extraire la portion correspondant à TypeMessage
+  const typeMessageBinary = binaryString.slice(0, sizes.TypeMessage);
+  const typeMessage = parseInt(typeMessageBinary, 2);
+
+  console.log('TypeMessage extrait:', typeMessage);
+  return typeMessage;
+}
+
+
 function decode(encodedHex, sizes) {
   // Étape 1 : Conversion de l'hexadécimal en une chaîne binaire
   console.log(encodedHex);
   let binaryString = "";
   console.log('Etape 1 : conversion hexa en binaire');
   for (let i = 0; i < encodedHex.length; i++) {
-      binaryString += parseInt(encodedHex[i], 16).toString(2).padStart(4, "0");
-      console.log(binaryString);
+    binaryString += parseInt(encodedHex[i], 16).toString(2).padStart(4, "0");
+    console.log(binaryString);
   }
 
   // Étape 2 : Découper la chaîne binaire en chainons selon les tailles spécifiées
@@ -444,19 +467,19 @@ function decode(encodedHex, sizes) {
   let startIndex = 0;
   const values = {};
   for (let [key, size] of Object.entries(sizes)) {
-      values[key] = binaryString.slice(startIndex, startIndex + size);
-      console.log(values[key]);
-      startIndex += size;
+    values[key] = binaryString.slice(startIndex, startIndex + size);
+    console.log(values[key]);
+    startIndex += size;
   }
 
   // Étape 3 : Conversion des chainons en valeurs lisibles
   console.log('Etape 3 : conversion des chainons en valeurs lisibles');
   for (let key in values) {
-      values[key] = parseInt(values[key], 2); // Convertir chaque valeur en décimal
-      console.log(values[key]);
+    values[key] = parseInt(values[key], 2); // Convertir chaque valeur en décimal
+    console.log(values[key]);
   }
   //convertir la temp
-  values.Temp = values.Temp/10;
+  values.Temp = values.Temp / 10;
 
   return values;
 }
@@ -466,34 +489,34 @@ function encode(values, sizes) {
   console.log('Étape 1 : conversion des valeurs en binaire');
   let binaryString = "";
   for (let [key, size] of Object.entries(sizes)) {
-      let binaryValue = values[key];
-      
-      // Si le champ est "Temp", appliquer l'échelle inversée
-      if (key === "Temp") {
-          binaryValue = Math.round(binaryValue * 10); // Multiplier par 10 pour restaurer la valeur originale
-      }
+    let binaryValue = values[key];
 
-      // Convertir en binaire et compléter avec des zéros pour atteindre la taille spécifiée
-      const binarySegment = binaryValue.toString(2).padStart(size, "0");
-      binaryString += binarySegment;
-      console.log(`${key} (${binaryValue}) : ${binarySegment}`);
+    // Si le champ est "Temp", appliquer l'échelle inversée
+    if (key === "Temp") {
+      binaryValue = Math.round(binaryValue * 10); // Multiplier par 10 pour restaurer la valeur originale
+    }
+
+    // Convertir en binaire et compléter avec des zéros pour atteindre la taille spécifiée
+    const binarySegment = binaryValue.toString(2).padStart(size, "0");
+    binaryString += binarySegment;
+    console.log(`${key} (${binaryValue}) : ${binarySegment}`);
   }
 
   // Étape 1.5 : Vérifier si la chaîne binaire fait un multiple de 8 bits
   const padding = 8 - (binaryString.length % 8);
   if (padding !== 8) {
-      binaryString = binaryString.padEnd(binaryString.length + padding, "0");
-      console.log(`Chaîne binaire complétée avec ${padding} zéro(s) pour atteindre un multiple de 8 bits.`);
+    binaryString = binaryString.padEnd(binaryString.length + padding, "0");
+    console.log(`Chaîne binaire complétée avec ${padding} zéro(s) pour atteindre un multiple de 8 bits.`);
   }
 
   // Étape 2 : Convertir la chaîne binaire en une chaîne hexadécimale
   console.log('Étape 2 : conversion de la chaîne binaire en hexadécimal');
   let encodedHex = "";
   for (let i = 0; i < binaryString.length; i += 4) {
-      const binaryChunk = binaryString.slice(i, i + 4);
-      const hexValue = parseInt(binaryChunk, 2).toString(16);
-      encodedHex += hexValue;
-      console.log(`Chunk binaire : ${binaryChunk} => Hex : ${hexValue}`);
+    const binaryChunk = binaryString.slice(i, i + 4);
+    const hexValue = parseInt(binaryChunk, 2).toString(16);
+    encodedHex += hexValue;
+    console.log(`Chunk binaire : ${binaryChunk} => Hex : ${hexValue}`);
   }
 
   return encodedHex.toUpperCase(); // Retourner la chaîne hexadécimale en majuscules
