@@ -5,6 +5,7 @@ const mongoose = require('mongoose')
 
 const app = express()
 app.use(cors())
+app.use(express.json())
 
 //-----------------------------------INIT BDD-----------------------------------
 
@@ -372,6 +373,7 @@ app.get('/message', (req, res) => {
 
   const encodedHex = req.query.data;
   let decodedValues = {};
+  let alert = {};
 
   const sizes = {
     TypeMessage: 4
@@ -407,6 +409,8 @@ app.get('/message', (req, res) => {
 
     decodedValues = decode(encodedHex, sizes);
     //console.log("decodedValues");
+    alert = getAlert(encodedHex, sizes)
+    console.log("Type d'alerte récupéré:", alert);
   }
 
 
@@ -473,6 +477,24 @@ function getTypeMessage(encodedHex, sizes) {
 
   console.log('TypeMessage extrait:', typeMessage);
   return typeMessage;
+}
+
+function getAlert(encodedHex, sizes) {
+  console.log('Extraction du Type d\'Alerte depuis les données');
+
+  // Convertir l'hexadécimal en binaire
+  let binaryString = "";
+  for (let i = 0; i < encodedHex.length; i++) {
+    binaryString += parseInt(encodedHex[i], 16).toString(2).padStart(4, "0");
+  }
+
+  // Extraire la portion correspondant à Type (6 bits après TypeMessage)
+  const startBit = sizes.TypeMessage; // Décalage après TypeMessage
+  const alertBinary = binaryString.slice(startBit, startBit + sizes.Type);
+  const alertType = parseInt(alertBinary, 2);
+
+  console.log('Type d\'Alerte extrait:', alertType);
+  return alertType;
 }
 
 
