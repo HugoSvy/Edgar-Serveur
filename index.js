@@ -371,21 +371,45 @@ app.get('/message', (req, res) => {
   }*/
 
   const encodedHex = req.query.data;
+  let decodedValues = {};
+
   const sizes = {
-    TypeMessage: 4, // Taille du TypeMessage en bits
-    Temp: 10,       // Taille de la température en bits
-    Humidite: 10,   // Taille de l'humidité en bits
-    Luminosite: 16, // Taille de la luminosité en bits
-    Reservoir: 2,   // Taille du réservoir en bits
-    TempExtreme: 4  // Taille des températures extrêmes en bits
+    TypeMessage: 4
   };
 
   // Exemple d'utilisation
   const typeMessage = getTypeMessage(encodedHex, sizes);
   console.log("Type de message récupéré:", typeMessage);
 
-  const decodedValues = decode(encodedHex, sizes);
-  //console.log(decodedValues);
+  if (typeMessage === 1) {
+    const sizes = {
+      TypeMessage: 4, // Taille du TypeMessage en bits
+      Temp: 10,       // Taille de la température en bits
+      Humidite: 10,   // Taille de l'humidité en bits
+      Luminosite: 16, // Taille de la luminosité en bits
+      Reservoir: 2,   // Taille du réservoir en bits
+      TempExtreme: 4  // Taille des températures extrêmes en bits
+    };
+
+    decodedValues = decode(encodedHex, sizes);
+    //console.log(decodedValues);
+  }
+
+  if (typeMessage === 2) {
+    const sizes = {
+      TypeMessage: 4, // Taille du TypeMessage en bits
+      Type: 6,       // Taille de la température en bits
+      Temp: 10,   // Taille de l'humidité en bits
+      Humidite: 10, // Taille de la luminosité en bits
+      Luminosite: 16,   // Taille du réservoir en bits
+      Reservoir: 2  // Taille des températures extrêmes en bits
+    };
+
+    decodedValues = decode(encodedHex, sizes);
+    //console.log("decodedValues");
+  }
+
+
 
   const now = new Date();
   const formattedDate = now.toLocaleString("fr-FR", { //à changer dans le futur 
